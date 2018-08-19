@@ -81,7 +81,7 @@ namespace JiraTimeLogging
                         Console.WriteLine("");
 
                     Console.WriteLine($"Time logged by: {group.Key}");
-                    Console.WriteLine($"Stories: {string.Join(", ", group.Select(x => x.Story))}");
+                    Console.WriteLine($"Stories: {string.Join(", ", group.Select(x => x.Story).Distinct())}");
                     Console.WriteLine($"Hours (h): {group.Sum(x => x.TimeSpendSeconds) / 3600}");
                     
                 }
