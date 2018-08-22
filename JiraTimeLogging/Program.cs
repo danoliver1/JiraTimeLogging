@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -9,6 +10,8 @@ namespace JiraTimeLogging
 {
     public static class Program
     {
+        private const string CredentialsFileLocation = @"C:\secure\jira-api-credentials.json";
+
         public static void Main(string[] args)
         {
             const string header = @"
@@ -21,11 +24,8 @@ namespace JiraTimeLogging
                                                                                                                     
                                                                                                                     ";
             Console.WriteLine(header);
-
-            Console.Write("Please enter your Jira Email: ");
-            var username = Console.ReadLine();
-
-            var password = ReadPassword("Please enter your Jira Password: ");
+            
+            var credentials = GetCredentials();
 
             Console.WriteLine("");
             Console.Write("Please enter the Sprint Id: ");
@@ -38,7 +38,7 @@ namespace JiraTimeLogging
             using (var client = new WebClient())
             {
                 client.BaseAddress = "https://riverjira.atlassian.net/rest/api/2/";
-                client.Headers[HttpRequestHeader.Authorization] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(username + ":" + password));
+                client.Headers[HttpRequestHeader.Authorization] = "Basic " + Convert.ToBase64String(Encoding.ASCII.GetBytes(credentials.Username + ":" + credentials.Password));
 
                 var sprintAsString = client.DownloadString($"search?jql=sprint={sprintId}");
                 dynamic sprint = JObject.Parse(sprintAsString);
@@ -90,6 +90,27 @@ namespace JiraTimeLogging
                 Console.ReadLine();
             }
         }
+
+        private static (string Username, string Password) GetCredentials()
+        {
+            // try to get credentials from file
+            if (File.Exists(CredentialsFileLocation))
+            {
+                var credentialsString = File.ReadAllText(CredentialsFileLocation);
+                dynamic credentials = JObject.Parse(credentialsString);
+                return (credentials.username, credentials.password);
+            }
+
+            // get username
+            Console.Write("Please enter your Jira Email: ");
+            var username = Console.ReadLine();
+
+            //get password
+            var password = ReadPassword("Please enter your Jira Password: ");
+
+            return (username, password);
+        }
+
 
         private static string ReadPassword(string displayMessage)
         {
